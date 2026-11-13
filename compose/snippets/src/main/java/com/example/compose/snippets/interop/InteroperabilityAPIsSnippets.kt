@@ -105,6 +105,47 @@ class ExampleFragmentXml : Fragment() {
 }
 // [END android_compose_interop_apis_compose_in_fragment_xml]
 
+class SensorLifecycleObserver(
+    private val sensorManager: SensorManager
+) : DefaultLifecycleObserver {
+    override fun onResume(owner: LifecycleOwner) {
+        // Register sensor listeners when the activity comes to the foreground
+        startSensorMonitoring()
+    }
+    override fun onPause(owner: LifecycleOwner) {
+        // Unregister sensor listeners to preserve battery when out of focus
+        stopSensorMonitoring()
+    }
+    private fun startSensorMonitoring() { /* Register listeners */ }
+    private fun stopSensorMonitoring() { /* Unregister listeners */ }
+}
+
+class MainActivity : AppCompatActivity() {
+    private lateinit var sensorObserver: SensorLifecycleObserver
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        
+        val sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
+        sensorObserver = SensorLifecycleObserver(sensorManager)
+        
+        // Register the observer
+        lifecycle.addObserver(sensorObserver)
+    }
+}
+
+@Composable
+fun SensorMonitorScreen(sensorManager: SensorManager) {
+    LifecycleResumeEffect(sensorManager) {
+        // Code executed on ON_RESUME
+        val listener = registerSensor(sensorManager)
+        onPauseOrDispose {
+            // Code executed on ON_PAUSE or when composable leaves composition
+            unregisterSensor(sensorManager, listener)
+        }
+    }
+}
+
 // [START android_compose_interop_apis_compose_in_fragment_view_binding]
 class ExampleFragment : Fragment() {
 
